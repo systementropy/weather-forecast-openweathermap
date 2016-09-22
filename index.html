@@ -1,0 +1,137 @@
+<!doctype html>
+<html>
+   
+   <head>
+      <title>Weather Forcast</title>
+      <script src = "https://ajax.googleapis.com/ajax/libs/angularjs/1.5.3/angular.min.js"></script>
+      <script src="https://use.fontawesome.com/b88dde9015.js"></script>
+      <!-- <link href="bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet"> -->
+      <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+      <style type="text/css">
+         body{background: #FEFEFE;}
+         .btn{outline: 1px solid rgba(0,0,0,0.1);}
+         .btn-dark{background: #FF9800; color: #363636;}
+         .btn-dark.btn-primary{background-color: #286090; color: #FFF;}
+         .clear{clear: both;}
+         .inactive{background: #5c8e9d; color: #FFF;}
+         .thumbnail{background: transparent;}
+         .primaryBg{background: #FF9800; color:#F3F3F3;box-shadow: 1px 1px 1px 0px rgba(0, 0, 0, 0.4);min-height: 324px;}
+         .primaryBg h1{font-size: 90px;margin-top: 55px;}
+         .smallText{font-size: 30px;vertical-align: super;}
+         .thumbnail .caption{padding:25px 15px 25px 25px;}
+         *{border-radius: 0px !important;}
+         .list-group{box-shadow: 1px 1px 0px 0px rgba(0, 0, 0, 0.1);margin:0;}
+         .list-group-item{background: #FAFAFA;}
+         .list-group-item>p:first-child{font-size: 11px;}
+         .list-group-item>p:last-child{font-size: 18px;}
+      </style>
+   </head>
+   
+   <body ng-app = "myapp">
+      <br><br><br><br><br>
+      <div class="container">
+         <div ng-controller = "myCtrl" >
+            
+            <div class="text-center"><!-- city list container-->
+               <button class="btn btn-inactive" 
+                  ng-class="selectedCity==city?'btn-info':''"
+                  ng-repeat="city in cities"
+                  ng-click="getDataDemand(city)">{{city}}</button>
+            </div><!-- city list container-->
+            <div>
+             <br><br><br><br><br><br>  
+            </div>
+            
+            <div class="row">
+               <div class="col-md-2"><!-- time list container-->
+                  <button class="btn btn-block" 
+                  ng-class="selectedData.dt==time.dt?'btn-info':''"
+                  ng-repeat="time in allData[selectedCity].list track by $index"
+                  ng-if="$index<10"
+                  ng-click="getTimeData(time.dt)">{{time.dt*1000|date:'MMM dd, h:mma'}}</button>
+               </div><!-- time list container-->
+
+               <div class="col-md-8"><!-- info display container-->
+                  <div class="thumbnail" style="background: #EFEFEF;">
+                     <div class="caption">
+                        <div class="inner primaryBg container-fluid pull-left col-md-6 col-sm-12 col-xs-12">
+                           <h2>
+                              <span class="pull-left">{{selectedCity}}</span>
+                              <h5 class="pull-right"><i class="fa fa-clock-o"></i> {{selectedData.dt*1000|date:'MMM dd, h:mma'}}</h5>
+                              <div class="clear"></div>
+                           </h2>
+                           <p>{{selectedData.weather[0].description}}</p>
+                           <p>
+                              
+                              <h1 class="text-center">
+                                 <span class="">{{(selectedData.main.temp)-273| number:1}}<span class="smallText">&#8451;</span></span>
+                                 <div class="clear"></div>
+                              </h1>
+                           </p>
+                           
+                        </div>
+                        <div class="col-md-6 col-sm-12 col-xs-12">
+                           <ul class="list-group">
+                              <li class="list-group-item">
+                                 <p>Humidity</p>
+                                 <p>{{selectedData.main.humidity}}%</p>
+                              </li>
+                              <li class="list-group-item">
+                                 <p>Wind</p>
+                                 <p>{{selectedData.wind.speed}} m/s</p>
+                              </li>
+                              <li class="list-group-item">
+                                 <p>Rain</p>
+                                 <p ng-if="selectedData.rain && selectedData.rain['3h']">{{selectedData.rain['3h']}} mL (in 3 hours)</p>
+                                 <p ng-if="!selectedData.rain || !selectedData.rain['3h']">low probability</p>
+                              </li>
+                              <li class="list-group-item">
+                                 <p>Pressure</p>
+                                 <p>{{selectedData.main.pressure}} mBar</p>
+                              </li>
+                           </ul>
+                        </div>
+                        <div class="clear"></div>
+                     </div>
+                  </div>
+               </div><!-- info display container-->
+               <div class="col-md-2">
+            </div>
+            
+         </div>
+      </div>
+      
+      <script>
+         var app = angular.module("myapp", []);
+
+         app.controller('myCtrl', function($scope, $http, $q) {
+            $scope.cities=['Delhi','Mumbai','Kolkata','Chennai','Bengaluru','Hyderabad','Pune','Patna','Lucknow','Chandigarh'];  //list of 10 cities
+            $scope.allData={};                  // contians all data of cities
+            $scope.selectedCity="";             // selected city
+
+            $scope.getTimeData = function(time){
+               $scope.selectedData=$scope.allData[$scope.selectedCity].map[time];
+            }
+
+            // Function to get data from openWeather API. The data recived are the forcasts with 3 hour differene
+            $scope.getDataDemand = function(cityName){
+               $scope.selectedCity=cityName;
+               $http.get('http://api.openweathermap.org/data/2.5/forecast?q='+cityName+',in&mode=json&appid=3e95a719dae6742076ec4ce84d3a82d1')
+                  .then(function(response) {
+                     $scope.allData[cityName] = response.data;
+                     $scope.allData[$scope.selectedCity].map={};
+
+                     for(var i=0;i<$scope.allData[$scope.selectedCity].list.length; i++){
+                        $scope.allData[$scope.selectedCity].map[$scope.allData[$scope.selectedCity].list[i].dt]=$scope.allData[$scope.selectedCity].list[i];
+                     }
+                     $scope.getTimeData($scope.allData[$scope.selectedCity].list[0].dt);
+               });
+            }
+            $scope.getDataDemand($scope.cities[0]);   //Initialize to select the first city
+            /*$scope.getTimeData($scope.allData[$scope.selectedCity].list[0].dt);*/
+         });
+         
+      </script>
+      
+   </body>
+</html>
